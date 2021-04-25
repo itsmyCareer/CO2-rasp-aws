@@ -1,5 +1,4 @@
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
-from board import SCL, SDA
 
 import logging
 import time

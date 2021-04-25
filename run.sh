@@ -1,0 +1,1 @@
+python3 main.py --endpoint a3v3bx5jn17ac1-ats.iot.ap-northeast-2.amazonaws.com --rootCA root-CA.crt --cert 7d536eab0a-certificate.pem.crt --key 7d536eab0a-private.pem.key --thingName ReRasp --clientId RaspberryPi
