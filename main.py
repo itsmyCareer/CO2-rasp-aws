@@ -1,9 +1,13 @@
-from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient  # AWS IOT 라이브러리
 
 import logging
 import time
 import json
-import argparse
+import argparse                 # 변수 전달용, aws IOT키 
+import RPi.GPIO as GPIO         # 라즈베리파이 핀 ( 현재사용 x)
+import serial                   # 아두이노 통신용 
+
+ser = serial.Serial("/dev/serial0", 9600, timeout=1)    # 아두이노랑 통신
 
 # Shadow JSON schema:
 #
@@ -16,8 +20,10 @@ import argparse
 #   }
 # }
 
+GPIO.setmode(GPIO.BCM)
+GPIO.setup([4, 23, 24], GPIO.IN)
 
-def customShadowCallback_Update(payload, responseStatus, token):
+def customShadowCallback_Update(payload, responseStatus, token):    # 데이터 업데이트 및 불러오기
 
     # Display status and data from update request
     if responseStatus == "timeout":
@@ -27,8 +33,9 @@ def customShadowCallback_Update(payload, responseStatus, token):
         payloadDict = json.loads(payload)
         print("~~~~~~~~~~~~~~~~~~~~~~~")
         print("Update request with token: " + token + " accepted!")
-        print("moisture: " + str(payloadDict["state"]["reported"]["moisture"]))
-        print("temperature: " + str(payloadDict["state"]["reported"]["temp"]))
+        print("gas: " + str(payloadDict["state"]["reported"]["gas"]))
+        print("MQ: " + str(payloadDict["state"]["reported"]["MQ"]))
+        print("CO2: " + str(payloadDict["state"]["reported"]["CO2"]))
         print("~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
     if responseStatus == "rejected":
@@ -37,7 +44,7 @@ def customShadowCallback_Update(payload, responseStatus, token):
 
 # Function called when a shadow is deleted
 def customShadowCallback_Delete(payload, responseStatus, token):
-
+#섀도우 삭제용
      # Display status and data from delete request
     if responseStatus == "timeout":
         print("Delete request " + token + " time out!")
@@ -53,7 +60,7 @@ def customShadowCallback_Delete(payload, responseStatus, token):
 
 # Read in command-line parameters
 def parseArgs():
-
+# 프로그램 실행시 인자 전달
     parser = argparse.ArgumentParser()
     parser.add_argument("-e", "--endpoint", action="store", required=True, dest="host", help="Your AWS IoT custom endpoint")
     parser.add_argument("-r", "--rootCA", action="store", required=True, dest="rootCAPath", help="Root CA file path")
@@ -114,13 +121,20 @@ deviceShadowHandler.shadowDelete(customShadowCallback_Delete, 5)
 
 # Read data from moisture sensor and update shadow
 while True:
+    
+    #gas = GPIO.input(4)
+    #MQ = GPIO.input(23)
+    #CO2 = GPIO.input(24)
+
+    data = ser.readlines()      # 시리얼로 아두이노에서 데이터 전달받는 코드
 
     # Display moisture and temp readings
-    print("Moisture Level: 2")
-    print("Temperature: 2")
-    
+    print("gas: {}".format(gas))
+    print("MQ: {}".format(MQ))
+    print("CO2: {}".format(CO2))
+
     # Create message payload
-    payload = {"state":{"reported":{"moisture":"1","temp":"1"}}}
+    payload = {"state":{"reported":{"gas":str(gas),"MQ":str(MQ),"CO2":str(CO2)}}}       # 전달할 데이터 JSON으로 변환
     
-    deviceShadowHandler.shadowUpdate(json.dumps(payload), customShadowCallback_Update, 5)
-    time.sleep(1)
+    deviceShadowHandler.shadowUpdate(json.dumps(payload), customShadowCallback_Update, 5)       # 업데이트 핸들러추가
+    time.sleep(1)       # 1초마다WHILE 문 반복
