@@ -16,6 +16,25 @@ import argparse
 #   }
 # }
 
+
+def customShadowCallback_Update(payload, responseStatus, token):
+
+    # Display status and data from update request
+    if responseStatus == "timeout":
+        print("Update request " + token + " time out!")
+
+    if responseStatus == "accepted":
+        payloadDict = json.loads(payload)
+        print("~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Update request with token: " + token + " accepted!")
+        print("moisture: " + str(payloadDict["state"]["reported"]["moisture"]))
+        print("temperature: " + str(payloadDict["state"]["reported"]["temp"]))
+        print("~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+
+    if responseStatus == "rejected":
+        print("Update request " + token + " rejected!")
+
+
 # Function called when a shadow is deleted
 def customShadowCallback_Delete(payload, responseStatus, token):
 
@@ -102,5 +121,6 @@ while True:
     
     # Create message payload
     payload = {"state":{"reported":{"moisture":"1","temp":"1"}}}
-
+    
+    deviceShadowHandler.shadowUpdate(json.dumps(payload), customShadowCallback_Update, 5)
     time.sleep(1)
